@@ -5,6 +5,7 @@ import { setOptions } from "./options"
 import { h as createElement, getCurrentInstance, reactive, Fragment as VueFragment, Comment } from 'vue'
 import { overwriteDomMethods, recoverDomMethods } from './overrideDom'
 import { createPortal } from "react-dom"
+import { hydrateRoot } from 'react-dom/client'
 import ReactDOM from 'react-dom'
 
 const ReactMajorVersion = parseInt(version)
@@ -105,8 +106,8 @@ const createReactContainer = (Component, options, wrapInstance) => class applyRe
         // The transparent transmission condition is that there is only one vnode in children
         if (children?.length === 1 && children[0]?.data) {
           // filter internal properties
-          const {key, ...otherAttrs} = this.$attrs
-          children[0].props = {...otherAttrs, ...children[0].props}
+          const { key, ...otherAttrs } = this.$attrs
+          children[0].props = { ...otherAttrs, ...children[0].props }
         }
         return children
       },
@@ -207,7 +208,7 @@ const createReactContainer = (Component, options, wrapInstance) => class applyRe
         if (finalProps[key] && typeof finalProps[key] === 'function') {
           const __veauryVueWrapperRef__ = this.__veauryVueWrapperRef__
           const oldFun = finalProps[key]
-          finalProps[key] = function(...args) {
+          finalProps[key] = function (...args) {
             __veauryVueWrapperRef__.__veaurySyncUpdateProps__(Component.__syncUpdateForPureReactInVue[key].apply(this, args))
             oldFun.apply(this, args)
             __veauryVueWrapperRef__.macroTaskUpdate = true
@@ -231,7 +232,7 @@ const createReactContainer = (Component, options, wrapInstance) => class applyRe
         delete refInfo.ref
       }
       return (
-          <Component {...newProps} {...refInfo}/>
+        <Component {...newProps} {...refInfo} />
       )
     }
     return <FunctionComponentWrap passedProps={newProps} component={Component} {...refInfo}>{newProps.children}</FunctionComponentWrap>
@@ -302,7 +303,7 @@ export default function applyReactInVue(component, options = {}) {
        * resulting in reactdom 'container' on which render depends cannot be obtained.
        * Therefore,you can create a 'VNode' node first and then execute 'slotsInit', which effectively avoids this situation
        */
-      const VNode = createElement(options.react.componentWrap, { ref: "react", ...options.react.componentWrapAttrs || {}}, this.VEAURY_Portals.map(({ Portal, key }) => Portal(createElement, key)))
+      const VNode = createElement(options.react.componentWrap, { ref: "react", ...options.react.componentWrapAttrs || {} }, this.VEAURY_Portals.map(({ Portal, key }) => Portal(createElement, key)))
       // Must be executed after 'VNode' is created
       this.__veauryCheckReactSlot__(this.$slots)
       return VNode
@@ -329,7 +330,7 @@ export default function applyReactInVue(component, options = {}) {
           let trueChildren
           try {
             trueChildren = fn.apply(this, fn.__reactArgs || [{}])
-          } catch(e){
+          } catch (e) {
             return
           }
 
@@ -493,7 +494,7 @@ export default function applyReactInVue(component, options = {}) {
         const compareLast = {
           slot: () => {
             this.__veauryLast__.slot = {
-              ...(children ? { children } : {children: null}),
+              ...(children ? { children } : { children: null }),
               ...lastNormalSlots,
               ...scopedSlots,
             }
@@ -565,17 +566,14 @@ export default function applyReactInVue(component, options = {}) {
             if (ReactDOM.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED !== undefined) {
               ReactDOM.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.usingClientEntryPoint = true
             }
-            this.__veauryReactApp__ = ReactDOM.createRoot(container)
-            this.__veauryReactApp__.render(reactRootComponent)
+            this.__veauryReactApp__ = hydrateRoot(options.getRoot(), reactRootComponent)
+            // this.__veauryReactApp__.render(reactRootComponent)
             return
           }
           ReactDOM.render(
             reactRootComponent,
-            container,
           )
-
         } else {
-
           const setReactState = () => {
             this.__veauryReactInstance__ && this.__veauryReactInstance__.setState((prevState) => {
               // Clear the previous 'state', preventing merging
@@ -583,13 +581,14 @@ export default function applyReactInVue(component, options = {}) {
                 if (options.isSlots && key === 'children') return
                 delete prevState[key]
               })
-              return {
+              const res = {
                 ...this.__veauryCache__,
                 ...toRaws(this.__veauryInjectedProps__),
                 ...!options.isSlots && this.__veauryLast__.slot,
                 ...toRaws(this.__veauryLast__.attrs),
                 // '__veauryVueProviderList__': this. __veauryVueProviderList__
               }
+              return res
             })
             this.__veauryCache__ = null
           }
@@ -678,19 +677,19 @@ export default function applyReactInVue(component, options = {}) {
        **/
       if (this.__VEAURY_IGNORE_STRANGE_UPDATE__) return
 
-      this.__veauryMountReactComponent__(true, {slot: true})
+      this.__veauryMountReactComponent__(true, { slot: true })
     },
     inheritAttrs: false,
     watch: {
       $attrs: {
         handler() {
-          this.__veauryMountReactComponent__(true, {attrs: true})
+          this.__veauryMountReactComponent__(true, { attrs: true })
         },
         deep: true,
       },
       __veauryInjectedProps__: {
         handler() {
-          this.__veauryMountReactComponent__(true, {attrs: true})
+          this.__veauryMountReactComponent__(true, { attrs: true })
         },
         deep: true,
       },
